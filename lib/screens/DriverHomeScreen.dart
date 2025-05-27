@@ -83,6 +83,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     if (permission.isGranted) {
       try {
         Position position = await Geolocator.getCurrentPosition(
+          // ignore: deprecated_member_use
           desiredAccuracy: LocationAccuracy.high,
         );
         setState(() {
