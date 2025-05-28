@@ -1,4 +1,6 @@
+import 'package:findmybus/auth_services.dart';
 import 'package:findmybus/screens/LoginScreen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class Signupscreen extends StatefulWidget {
@@ -9,7 +11,28 @@ class Signupscreen extends StatefulWidget {
 }
 
 class _SignupscreenState extends State<Signupscreen> {
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  String errorMessage = '';
   String selectedRole = "Passenger";
+
+  void register() async {
+    try {
+      await authServices.value.createAccount(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+      Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        errorMessage = e.message ?? 'An Error Ocured';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,6 +77,7 @@ class _SignupscreenState extends State<Signupscreen> {
               ),
               const SizedBox(height: 40),
               TextField(
+                controller: nameController,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.person, color: Colors.blue),
                   labelText: 'Full Name',
@@ -64,6 +88,7 @@ class _SignupscreenState extends State<Signupscreen> {
               ),
               const SizedBox(height: 20),
               TextField(
+                controller: emailController,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.email, color: Colors.amber),
                   labelText: 'Email Address',
@@ -74,6 +99,7 @@ class _SignupscreenState extends State<Signupscreen> {
               ),
               const SizedBox(height: 20),
               TextField(
+                controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.lock, color: Colors.green),
@@ -85,6 +111,7 @@ class _SignupscreenState extends State<Signupscreen> {
               ),
               const SizedBox(height: 20),
               TextField(
+                controller: confirmPasswordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.lock, color: Colors.green),
@@ -126,7 +153,7 @@ class _SignupscreenState extends State<Signupscreen> {
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  // Save role and user details here
+                  register();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -146,6 +173,7 @@ class _SignupscreenState extends State<Signupscreen> {
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
+              Text(errorMessage, style: TextStyle(color: Colors.redAccent)),
             ],
           ),
         ),
