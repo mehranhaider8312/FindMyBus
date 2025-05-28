@@ -6,10 +6,12 @@ import 'package:findmybus/screens/LoginScreen.dart';
 import 'package:findmybus/screens/ReportIssueScreen.dart';
 import 'package:findmybus/screens/RoutesListScreen.dart';
 import 'package:findmybus/screens/UserProfileScreen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   const DriverHomeScreen({super.key});
@@ -19,6 +21,75 @@ class DriverHomeScreen extends StatefulWidget {
 }
 
 class _DriverHomeScreenState extends State<DriverHomeScreen> {
+  Future<void> _logout(BuildContext context) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text("Logging out..."),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Sign out from Firebase Auth
+      await FirebaseAuth.instance.signOut();
+
+      // Clear all data from SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // This removes all stored data
+
+      // Or if you want to remove specific keys only:
+      await prefs.remove('user_email');
+      await prefs.remove('user_role');
+      await prefs.remove('user_id');
+      await prefs.remove('is_logged_in');
+
+      // Close loading dialog
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Navigate to login screen and clear all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false, // This removes all previous routes
+      );
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logged out successfully'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      // Close loading dialog if it's open
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logout failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   final List<Map<String, dynamic>> routes = [
     {
       'routeNumber': 'Route 16',
@@ -349,12 +420,36 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.orange),
               title: const Text('Logout'),
-              subtitle: const Text('Sign out of your account'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
+              subtitle: const Text('Logout from app'),
+              onTap: () async {
+                // Show confirmation dialog
+                bool? shouldLogout = await showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Confirm Logout'),
+                      content: const Text('Are you sure you want to logout?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                          ),
+                          child: const Text('Logout'),
+                        ),
+                      ],
+                    );
+                  },
                 );
+
+                // If user confirmed logout
+                if (shouldLogout == true) {
+                  await _logout(context);
+                }
               },
             ),
           ],
