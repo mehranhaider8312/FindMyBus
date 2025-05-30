@@ -22,9 +22,23 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
   }
 
   Future<void> _initializeData() async {
+    print('🔄 Starting to initialize data...');
+
     // Load routes from Firestore if not already loaded
     if (allRoutes.isEmpty) {
+      print('📥 allRoutes is empty, loading from Firestore...');
       await loadAllRoutes();
+    } else {
+      print('✅ allRoutes already has ${allRoutes.length} routes');
+    }
+
+    // Print debug info about loaded routes
+    print('📊 Total routes loaded: ${allRoutes.length}');
+    for (int i = 0; i < allRoutes.length; i++) {
+      final route = allRoutes[i];
+      print(
+        'Route $i: ID=${route.id}, Active=${route.isActive}, Stops=${route.totalStops}',
+      );
     }
 
     // Load favorite routes from SharedPreferences
@@ -33,11 +47,14 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
     setState(() {
       isLoading = false;
     });
+
+    print('✅ Data initialization complete');
   }
 
   Future<void> _loadFavorites() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     favoriteRoutes = prefs.getStringList('favorite_routes') ?? [];
+    print('💖 Loaded ${favoriteRoutes.length} favorite routes');
   }
 
   Future<void> _saveFavorites() async {
@@ -85,13 +102,22 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
 
     // Filter routes based on search query and active status
     final filteredRoutes =
-        allRoutes
-            .where(
-              (route) =>
-                  route.isActive && // Only show active routes
-                  route.id.toLowerCase().contains(searchQuery.toLowerCase()),
-            )
-            .toList();
+        allRoutes.where((route) {
+          final matchesSearch = route.id.toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          );
+          final isActive = route.isActive;
+
+          print(
+            '🔍 Route ${route.id}: Active=$isActive, MatchesSearch=$matchesSearch (query="$searchQuery")',
+          );
+
+          return isActive && matchesSearch;
+        }).toList();
+
+    print(
+      '📋 Filtered routes: ${filteredRoutes.length} out of ${allRoutes.length}',
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -115,12 +141,39 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
+            // Debug Info Card
+            Card(
+              color: Colors.blue.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🐛 Debug Info:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade800,
+                      ),
+                    ),
+                    Text('Total Routes: ${allRoutes.length}'),
+                    Text('Filtered Routes: ${filteredRoutes.length}'),
+                    Text('Search Query: "$searchQuery"'),
+                    Text(
+                      'Active Routes: ${allRoutes.where((r) => r.isActive).length}',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
             // Search Bar
             TextField(
               onChanged: (value) {
                 setState(() {
                   searchQuery = value;
                 });
+                print('🔍 Search query changed to: "$value"');
               },
               decoration: InputDecoration(
                 hintText: 'Search by Route ID',
@@ -142,14 +195,44 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
             Expanded(
               child:
                   filteredRoutes.isEmpty
-                      ? const Center(
-                        child: Text(
-                          'No routes found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
+                      ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'No routes found',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            if (allRoutes.isEmpty)
+                              const Text(
+                                'No routes loaded from database',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              )
+                            else if (allRoutes.where((r) => r.isActive).isEmpty)
+                              const Text(
+                                'No active routes available',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              )
+                            else
+                              const Text(
+                                'Try clearing the search or check route status',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                          ],
                         ),
                       )
                       : ListView.builder(

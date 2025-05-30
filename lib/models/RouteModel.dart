@@ -11,7 +11,10 @@ class Route {
   int get totalStops => stops.length;
 
   factory Route.fromFirestore(String docId, Map<String, dynamic> data) {
-    return Route(
+    print('🔄 Creating Route from Firestore: docId=$docId');
+    print('📋 Raw data: $data');
+
+    final route = Route(
       id: docId,
       isActive: data['isActive'] ?? false,
       stops:
@@ -22,6 +25,11 @@ class Route {
               .toList() ??
           [],
     );
+
+    print(
+      '✅ Created Route: ID=${route.id}, Active=${route.isActive}, Stops=${route.stops.length}',
+    );
+    return route;
   }
 }
 
@@ -63,25 +71,45 @@ class Stop {
   double get lng => coordinates[1];
 }
 
-// routes_list.dart
-
+// Global routes list
 List<Route> allRoutes = [];
 
 Future<void> loadAllRoutes() async {
   try {
+    print('🔄 Starting to load routes from Firestore...');
+
+    // Clear existing routes
+    allRoutes.clear();
+
     QuerySnapshot querySnapshot =
         await FirebaseFirestore.instance.collection('routes').get();
 
-    allRoutes =
-        querySnapshot.docs.map((doc) {
-          return Route.fromFirestore(
-            doc.id,
-            doc.data() as Map<String, dynamic>,
-          );
-        }).toList();
+    print('📥 Received ${querySnapshot.docs.length} documents from Firestore');
 
-    print('Loaded ${allRoutes.length} routes');
+    for (var doc in querySnapshot.docs) {
+      try {
+        print('📄 Processing document: ${doc.id}');
+        print('📋 Document data: ${doc.data()}');
+
+        final route = Route.fromFirestore(
+          doc.id,
+          doc.data() as Map<String, dynamic>,
+        );
+
+        allRoutes.add(route);
+        print('✅ Added route ${route.id} to allRoutes list');
+      } catch (e) {
+        print('❌ Error processing document ${doc.id}: $e');
+      }
+    }
+
+    print('🎉 Successfully loaded ${allRoutes.length} routes');
+
+    // Print summary
+    int activeRoutes = allRoutes.where((r) => r.isActive).length;
+    print('📊 Summary: ${allRoutes.length} total routes, $activeRoutes active');
   } catch (e) {
-    print('Error loading routes: $e');
+    print('❌ Error loading routes from Firestore: $e');
+    print('🔍 Error details: ${e.toString()}');
   }
 }
