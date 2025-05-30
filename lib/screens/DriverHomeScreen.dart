@@ -23,39 +23,39 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     {
       'routeNumber': 'Route 16',
       'stops': [
-        {'name': 'Cannal Metro Station', 'location': LatLng(31.5121, 74.3085)},
-        {'name': 'Kalma Chowk', 'location': LatLng(31.5065, 74.3205)},
+        {'name': 'Cannal Metro Station', 'location': LatLng(31.5101, 74.3321)},
+        {'name': 'Kalma Chowk', 'location': LatLng(31.5078, 74.3219)},
         {
           'name': 'Pakistani Chowk Model Town',
-          'location': LatLng(31.4898, 74.3292),
+          'location': LatLng(31.4962, 74.3167),
         },
-        {'name': 'Pace Shopping Center', 'location': LatLng(31.4883, 74.3296)},
-        {'name': 'Akbar Chowk', 'location': LatLng(31.4751, 74.3450)},
-        {'name': 'UCP Johar Town', 'location': LatLng(31.4692, 74.3761)},
+        {'name': 'Pace Shopping Center', 'location': LatLng(31.4940, 74.3050)},
+        {'name': 'Akbar Chowk', 'location': LatLng(31.4836, 74.2931)},
+        {'name': 'UCP Johar Town', 'location': LatLng(31.4678, 74.2726)},
         {
           'name': 'Daewoo Terminal Thokar',
-          'location': LatLng(31.4569, 74.3902),
+          'location': LatLng(31.4585, 74.2463),
         },
         {
           'name': 'Jinnah Terminal Thokar',
-          'location': LatLng(31.4560, 74.3983),
+          'location': LatLng(31.4572, 74.2379),
         },
       ],
     },
     {
       'routeNumber': 'Route 2',
       'stops': [
-        {'name': 'Stop A', 'location': LatLng(31.5204, 74.3587)},
-        {'name': 'Stop B', 'location': LatLng(31.5250, 74.3600)},
-        {'name': 'Stop C', 'location': LatLng(31.5300, 74.3620)},
+        {'name': 'Stop A', 'location': LatLng(31.5300, 74.3400)},
+        {'name': 'Stop B', 'location': LatLng(31.5200, 74.3300)},
+        {'name': 'Stop C', 'location': LatLng(31.5100, 74.3200)},
       ],
     },
     {
       'routeNumber': 'Route 3',
       'stops': [
-        {'name': 'Stop X', 'location': LatLng(31.5000, 74.3600)},
-        {'name': 'Stop Y', 'location': LatLng(31.5050, 74.3620)},
-        {'name': 'Stop Z', 'location': LatLng(31.5100, 74.3640)},
+        {'name': 'Stop X', 'location': LatLng(31.5000, 74.3100)},
+        {'name': 'Stop Y', 'location': LatLng(31.4900, 74.3000)},
+        {'name': 'Stop Z', 'location': LatLng(31.4800, 74.2900)},
       ],
     },
   ];
@@ -70,7 +70,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   GoogleMapController? mapController;
   Marker? currentLocationMarker;
-
   Set<Polyline> polylines = {};
 
   @override
@@ -84,6 +83,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     if (permission.isGranted) {
       try {
         Position position = await Geolocator.getCurrentPosition(
+          // ignore: deprecated_member_use
           desiredAccuracy: LocationAccuracy.high,
         );
         setState(() {
@@ -150,17 +150,85 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   LatLngBounds _getBounds(List<LatLng> points) {
-    double x0 = points.first.latitude, x1 = points.first.latitude;
-    double y0 = points.first.longitude, y1 = points.first.longitude;
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
 
-    for (LatLng point in points) {
-      if (point.latitude > x1) x1 = point.latitude;
-      if (point.latitude < x0) x0 = point.latitude;
-      if (point.longitude > y1) y1 = point.longitude;
-      if (point.longitude < y0) y0 = point.longitude;
+    for (var point in points) {
+      if (point.latitude < minLat) minLat = point.latitude;
+      if (point.latitude > maxLat) maxLat = point.latitude;
+      if (point.longitude < minLng) minLng = point.longitude;
+      if (point.longitude > maxLng) maxLng = point.longitude;
     }
 
-    return LatLngBounds(southwest: LatLng(x0, y0), northeast: LatLng(x1, y1));
+    return LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+  }
+
+  void _showStartJourneyDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Start Journey'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: 'Select Route'),
+                value: selectedRoute,
+                onChanged: (String? newRoute) {
+                  setState(() {
+                    selectedRoute = newRoute;
+                  });
+                },
+                items:
+                    routes
+                        .map(
+                          (route) => DropdownMenuItem<String>(
+                            value: route['routeNumber'],
+                            child: Text(route['routeNumber']),
+                          ),
+                        )
+                        .toList(),
+              ),
+              const SizedBox(height: 15),
+              TextField(
+                decoration: const InputDecoration(labelText: 'Bus ID'),
+                onChanged: (value) {
+                  setState(() {
+                    busId = value;
+                  });
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                if (selectedRoute != null && busId != null) {
+                  setState(() {
+                    journeyStarted = true;
+                  });
+                  _drawRoutePolyline();
+                }
+              },
+              child: const Text('Start Journey'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -295,101 +363,46 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       body:
           locationLoading
               ? const Center(child: CircularProgressIndicator())
-              : GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(latitude!, longitude!),
-                  zoom: 16,
-                ),
-                markers: {
-                  if (currentLocationMarker != null) currentLocationMarker!,
-                },
-                polylines: polylines,
-                onMapCreated: (GoogleMapController controller) {
-                  mapController = controller;
-                },
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
+              : Stack(
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(latitude!, longitude!),
+                      zoom: 16,
+                    ),
+                    markers: {
+                      if (currentLocationMarker != null) currentLocationMarker!,
+                    },
+                    polylines: polylines,
+                    onMapCreated: (GoogleMapController controller) {
+                      mapController = controller;
+                    },
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                  ),
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        if (!journeyStarted) {
+                          _showStartJourneyDialog();
+                        } else {
+                          setState(() {
+                            journeyStarted = false;
+                            polylines.clear();
+                          });
+                        }
+                      },
+                      backgroundColor: Colors.red.shade600,
+                      child: Icon(
+                        journeyStarted ? Icons.stop : Icons.play_arrow,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (!journeyStarted) {
-            _showStartJourneyDialog();
-          } else {
-            setState(() {
-              journeyStarted = false;
-              polylines.clear(); // Remove route when journey is stopped
-            });
-          }
-        },
-        backgroundColor: Colors.red.shade600,
-        child: Icon(
-          journeyStarted ? Icons.stop : Icons.play_arrow,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  void _showStartJourneyDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Start Journey'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Select Route'),
-                value: selectedRoute,
-                onChanged: (String? newRoute) {
-                  setState(() {
-                    selectedRoute = newRoute;
-                  });
-                },
-                items:
-                    routes
-                        .map(
-                          (route) => DropdownMenuItem<String>(
-                            value: route['routeNumber'],
-                            child: Text(route['routeNumber']),
-                          ),
-                        )
-                        .toList(),
-              ),
-              const SizedBox(height: 15),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Bus ID'),
-                onChanged: (value) {
-                  setState(() {
-                    busId = value;
-                  });
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                if (selectedRoute != null && busId != null) {
-                  setState(() {
-                    journeyStarted = true;
-                  });
-                  _drawRoutePolyline();
-                }
-              },
-              child: const Text('Start Journey'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
     );
   }
 }

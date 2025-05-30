@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "562618271703",
+    "project_id": "findmybus-e73c3",
+    "storage_bucket": "findmybus-e73c3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562618271703:android:082380ed93063641e5ed92",
+        "android_client_info": {
+          "package_name": "com.example.findmybus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtSVAgCktCyfLtv_uGonimi2pR5uHEQNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
