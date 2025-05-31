@@ -22,23 +22,9 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
   }
 
   Future<void> _initializeData() async {
-    print('🔄 Starting to initialize data...');
-
     // Load routes from Firestore if not already loaded
     if (allRoutes.isEmpty) {
-      print('📥 allRoutes is empty, loading from Firestore...');
       await loadAllRoutes();
-    } else {
-      print('✅ allRoutes already has ${allRoutes.length} routes');
-    }
-
-    // Print debug info about loaded routes
-    print('📊 Total routes loaded: ${allRoutes.length}');
-    for (int i = 0; i < allRoutes.length; i++) {
-      final route = allRoutes[i];
-      print(
-        'Route $i: ID=${route.id}, Active=${route.isActive}, Stops=${route.totalStops}',
-      );
     }
 
     // Load favorite routes from SharedPreferences
@@ -47,14 +33,11 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
     setState(() {
       isLoading = false;
     });
-
-    print('✅ Data initialization complete');
   }
 
   Future<void> _loadFavorites() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     favoriteRoutes = prefs.getStringList('favorite_routes') ?? [];
-    print('💖 Loaded ${favoriteRoutes.length} favorite routes');
   }
 
   Future<void> _saveFavorites() async {
@@ -85,9 +68,7 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
           backgroundColor: Colors.red.shade600,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
             'Speedo Bus Routes',
@@ -106,27 +87,15 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
           final matchesSearch = route.id.toLowerCase().contains(
             searchQuery.toLowerCase(),
           );
-          final isActive = route.isActive;
-
-          print(
-            '🔍 Route ${route.id}: Active=$isActive, MatchesSearch=$matchesSearch (query="$searchQuery")',
-          );
-
-          return isActive && matchesSearch;
+          return route.isActive && matchesSearch;
         }).toList();
-
-    print(
-      '📋 Filtered routes: ${filteredRoutes.length} out of ${allRoutes.length}',
-    );
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red.shade600,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Speedo Bus Routes',
@@ -141,39 +110,12 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
-            // Debug Info Card
-            Card(
-              color: Colors.blue.shade50,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '🐛 Debug Info:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade800,
-                      ),
-                    ),
-                    Text('Total Routes: ${allRoutes.length}'),
-                    Text('Filtered Routes: ${filteredRoutes.length}'),
-                    Text('Search Query: "$searchQuery"'),
-                    Text(
-                      'Active Routes: ${allRoutes.where((r) => r.isActive).length}',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
             // Search Bar
             TextField(
               onChanged: (value) {
                 setState(() {
                   searchQuery = value;
                 });
-                print('🔍 Search query changed to: "$value"');
               },
               decoration: InputDecoration(
                 hintText: 'Search by Route ID',
@@ -199,39 +141,30 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            Icon(
+                              Icons.directions_bus_outlined,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
                             const Text(
                               'No routes found',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.red,
+                                color: Colors.grey,
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            if (allRoutes.isEmpty)
-                              const Text(
-                                'No routes loaded from database',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              )
-                            else if (allRoutes.where((r) => r.isActive).isEmpty)
-                              const Text(
-                                'No active routes available',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              )
-                            else
-                              const Text(
-                                'Try clearing the search or check route status',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
+                            const SizedBox(height: 8),
+                            Text(
+                              searchQuery.isEmpty
+                                  ? 'No active routes available'
+                                  : 'Try adjusting your search terms',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
                               ),
+                            ),
                           ],
                         ),
                       )
@@ -252,76 +185,82 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
                             },
                             child: Card(
                               elevation: 3,
-                              margin: const EdgeInsets.symmetric(vertical: 10),
+                              margin: const EdgeInsets.symmetric(vertical: 8),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Container(
                                 decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
                                   border: Border(
                                     left: BorderSide(
                                       color: Colors.red.shade600,
-                                      width: 5,
+                                      width: 4,
                                     ),
                                   ),
                                 ),
                                 child: Padding(
-                                  padding: const EdgeInsets.all(15.0),
+                                  padding: const EdgeInsets.all(16.0),
                                   child: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            route.id,
-                                            style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.red.shade600,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Text(
-                                            'Number of Stops: ${route.totalStops}',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  route.isActive
-                                                      ? Colors.green.shade100
-                                                      : Colors.red.shade100,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              route.isActive
-                                                  ? 'Active'
-                                                  : 'Inactive',
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              route.id,
                                               style: TextStyle(
-                                                fontSize: 12,
-                                                color:
-                                                    route.isActive
-                                                        ? Colors.green.shade700
-                                                        : Colors.red.shade700,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.red.shade600,
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.location_on_outlined,
+                                                  size: 16,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${route.totalStops} stops',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                'Active',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.green.shade700,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       IconButton(
                                         icon: Icon(
@@ -330,9 +269,8 @@ class _RouteslistscreenState extends State<Routeslistscreen> {
                                               : Icons.favorite_border,
                                           color: Colors.red.shade600,
                                         ),
-                                        onPressed: () {
-                                          _toggleFavorite(route.id);
-                                        },
+                                        onPressed:
+                                            () => _toggleFavorite(route.id),
                                       ),
                                     ],
                                   ),
