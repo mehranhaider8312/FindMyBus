@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String selectedRole = "Passenger";
   String errorMessage = '';
   bool isLoading = false;
-
+  String driverID = "";
   @override
   void initState() {
     super.initState();
@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Navigate to appropriate home screen based on role
-  void _navigateToHomeScreen(String role) {
+  Future<void> _navigateToHomeScreen(String role) async {
     if (role == "Driver") {
       Navigator.pushReplacement(
         context,
@@ -100,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
               .collection('users')
               .doc(userCredential.user!.uid)
               .get();
-
+      driverID = userCredential.user!.uid;
       if (!userDoc.exists) {
         setState(() {
           errorMessage = 'User data not found. Please contact support.';

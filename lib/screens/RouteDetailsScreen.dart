@@ -436,7 +436,10 @@ class RouteDetailsScreen extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          stop.stopCoordinates,
+                          stop.getCoordinatesString(
+                            separator: ", ",
+                            precision: 6,
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
