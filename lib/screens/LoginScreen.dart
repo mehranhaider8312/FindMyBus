@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => PassangerHomeScreen()),
+        MaterialPageRoute(builder: (context) => PassengerHomeScreen()),
       );
     }
   }
