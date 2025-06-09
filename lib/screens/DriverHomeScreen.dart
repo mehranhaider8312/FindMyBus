@@ -664,7 +664,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.contact_support, color: Colors.purple),
-            title: const Text('Connect us'),
+            title: const Text('Contact us'),
             subtitle: const Text('Your words mean a lot to us'),
             onTap: () {
               Navigator.push(

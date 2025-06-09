@@ -146,10 +146,7 @@ Stream<List<Driver>> getActiveDriversStream() {
 
         for (var doc in snapshot.docs) {
           try {
-            final driver = Driver.fromFirestore(
-              doc.id,
-              doc.data() as Map<String, dynamic>,
-            );
+            final driver = Driver.fromFirestore(doc.id, doc.data());
 
             // Only add drivers with valid locations and recent activity
             if (driver.hasValidLocation && driver.isRecentlyActive) {
