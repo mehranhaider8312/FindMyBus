@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io'; // Add this import for File class
 import 'package:findmybus/models/RouteModel.dart' as model;
 import 'package:findmybus/screens/ChangeLanguageScreen.dart';
 import 'package:findmybus/screens/ContactUsScreen.dart';
@@ -43,10 +44,17 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   StreamSubscription<Position>? positionStreamSubscription;
 
+  // User profile data
+  String _userName = 'Driver';
+  String _userEmail = '';
+  String? _profileImagePath;
+  bool _userDataLoaded = false;
+
   @override
   void initState() {
     super.initState();
     _initializeScreen();
+    _loadUserDataFromPrefs();
   }
 
   @override
@@ -70,6 +78,25 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     }
   }
 
+  void _refreshUserData() {
+    _loadUserDataFromPrefs();
+  }
+
+  Future<void> _loadUserDataFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _userName = prefs.getString('user_name') ?? 'Driver';
+        _userEmail = prefs.getString('user_email') ?? '';
+        _profileImagePath = prefs.getString('user_profile_image');
+        _userDataLoaded = true;
+      });
+    } catch (e) {
+      print('Error loading user data: $e');
+      setState(() => _userDataLoaded = true);
+    }
+  }
+
   Future<void> _loadDriverData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -77,7 +104,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         driverId =
             prefs.getString('driver_id') ??
             FirebaseAuth.instance.currentUser?.uid;
-        driverName = prefs.getString('driver_name') ?? 'Driver';
+        driverName = prefs.getString('driver_name') ?? _userName;
       });
     } catch (e) {
       debugPrint('Error loading driver data: $e');
@@ -250,7 +277,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               .set({
                 'busID': busId,
                 'routeId': selectedRoute!.id,
-                'driverName': driverName,
+                'driverName': _userName, // Use the loaded user name
                 'currentLocation': GeoPoint(
                   position.latitude,
                   position.longitude,
@@ -556,7 +583,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                     Text(
-                      'Bus: $busId | Driver: $driverName',
+                      'Bus: $busId | Driver: $_userName',
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                     Text(
@@ -564,6 +591,30 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                   ],
+                ),
+              ),
+            ),
+
+          // Loading indicator for location
+          if (locationLoading)
+            const Positioned(
+              top: 120,
+              left: 20,
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 8),
+                      Text('Loading location...'),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -597,33 +648,39 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         children: [
           UserAccountsDrawerHeader(
             decoration: BoxDecoration(color: Colors.red.shade600),
-            accountName: GestureDetector(
-              onTap: () {
-                Navigator.push(
+            accountName: Text(
+              _userName,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            accountEmail: GestureDetector(
+              onTap: () async {
+                Navigator.pop(context); // Close drawer first
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder:
-                        (context) => UserProfileScreen(
-                          name: driverName,
-                          email:
-                              FirebaseAuth.instance.currentUser?.email ??
-                              'driver@example.com',
-                          imagePath: 'assets/images/logo_image.jpg',
-                        ),
+                    builder: (context) => const UserProfileScreen(),
                   ),
                 );
+                // Refresh user data when returning from profile screen
+                _refreshUserData();
               },
-              child: Text(
-                driverName,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: const Text(
+                'View Profile',
+                style: TextStyle(color: Colors.white),
               ),
             ),
-            accountEmail: const Text('View Profile'),
-            currentAccountPicture: const CircleAvatar(
-              backgroundImage: AssetImage('assets/images/logo_image.jpg'),
+            currentAccountPicture: CircleAvatar(
+              backgroundImage:
+                  _profileImagePath != null &&
+                          File(_profileImagePath!).existsSync()
+                      ? FileImage(File(_profileImagePath!))
+                      : const AssetImage('assets/images/logo_image.jpg')
+                          as ImageProvider,
+              child:
+                  _profileImagePath == null ||
+                          !File(_profileImagePath!).existsSync()
+                      ? const Icon(Icons.person, size: 40, color: Colors.white)
+                      : null,
             ),
           ),
           ListTile(
@@ -662,17 +719,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               _shareLiveLocation();
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.contact_support, color: Colors.purple),
-            title: const Text('Contact us'),
-            subtitle: const Text('Your words mean a lot to us'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ContactUsScreen()),
-              );
-            },
-          ),
+
           ListTile(
             leading: const Icon(Icons.report_problem, color: Colors.orange),
             title: const Text('Report an Issue'),

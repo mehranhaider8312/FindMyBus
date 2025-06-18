@@ -46,11 +46,13 @@ class _LoginScreenState extends State<LoginScreen> {
     String email,
     String role,
     String userId,
+    String name, // Add name parameter
   ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_email', email);
     await prefs.setString('user_role', role);
     await prefs.setString('user_id', userId);
+    await prefs.setString('user_name', name); // Save user name
     await prefs.setBool('is_logged_in', true);
   }
 
@@ -111,6 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
       String actualRole = userData['role'] ?? '';
+      String userName = userData['name'] ?? 'User'; // Get user name
 
       // Check if selected role matches the user's actual role
       if (actualRole != selectedRole) {
@@ -127,6 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
         email.trim(),
         actualRole,
         userCredential.user!.uid,
+        userName, // Pass the user name
       );
 
       setState(() {

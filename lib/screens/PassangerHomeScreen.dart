@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io'; // Add this import for File class
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
@@ -33,7 +34,10 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   double? userLongitude;
   bool locationLoading = true;
   bool isMapReady = false;
-
+  String _userName = 'User';
+  String _userEmail = '';
+  String? _profileImagePath;
+  bool _userDataLoaded = false;
   BitmapDescriptor? busIcon;
 
   final List<Map<String, String>> busStops = [
@@ -46,6 +50,26 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   void initState() {
     super.initState();
     _initializeScreen();
+    _loadUserDataFromPrefs();
+  }
+
+  void _refreshUserData() {
+    _loadUserDataFromPrefs();
+  }
+
+  Future<void> _loadUserDataFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _userName = prefs.getString('user_name') ?? 'User';
+        _userEmail = prefs.getString('user_email') ?? '';
+        _profileImagePath = prefs.getString('user_profile_image');
+        _userDataLoaded = true;
+      });
+    } catch (e) {
+      print('Error loading user data: $e');
+      setState(() => _userDataLoaded = true);
+    }
   }
 
   @override
@@ -568,31 +592,39 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
         children: [
           UserAccountsDrawerHeader(
             decoration: BoxDecoration(color: Colors.red.shade600),
-            accountName: const Text(
-              'Esha Khan',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            accountName: Text(
+              _userName,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             accountEmail: GestureDetector(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                Navigator.pop(context); // Close drawer first
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder:
-                        (context) => UserProfileScreen(
-                          name: 'Esha Khan',
-                          email: 'eshakhan8312',
-                          imagePath: 'assets/images/logo_image.jpg',
-                        ),
+                    builder: (context) => const UserProfileScreen(),
                   ),
                 );
+                // Refresh user data when returning from profile screen
+                _refreshUserData();
               },
               child: const Text(
                 'View Profile',
                 style: TextStyle(color: Colors.white),
               ),
             ),
-            currentAccountPicture: const CircleAvatar(
-              backgroundImage: AssetImage('assets/images/logo_image.jpg'),
+            currentAccountPicture: CircleAvatar(
+              backgroundImage:
+                  _profileImagePath != null &&
+                          File(_profileImagePath!).existsSync()
+                      ? FileImage(File(_profileImagePath!))
+                      : const AssetImage('assets/images/logo_image.jpg')
+                          as ImageProvider,
+              child:
+                  _profileImagePath == null ||
+                          !File(_profileImagePath!).existsSync()
+                      ? const Icon(Icons.person, size: 40, color: Colors.white)
+                      : null,
             ),
           ),
           ListTile(
@@ -704,7 +736,7 @@ class _PassengerHomeScreenState extends State<PassengerHomeScreen> {
   }
 }
 
-// Bus Stop Card Widget (unchanged)
+// Bus Stop Card Widget
 class BusStopCard extends StatelessWidget {
   final String stopName;
   final String distance;
