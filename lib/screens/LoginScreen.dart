@@ -5,6 +5,7 @@ import 'package:findmybus/screens/driverHomeScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String errorMessage = '';
   bool isLoading = false;
   String driverID = "";
+
   @override
   void initState() {
     super.initState();
@@ -41,19 +43,32 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Save user login info to SharedPreferences
+  // Save user login info to SharedPreferences and FCM token to Firestore
   Future<void> _saveUserLoginInfo(
     String email,
     String role,
     String userId,
-    String name, // Add name parameter
+    String name,
   ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_email', email);
     await prefs.setString('user_role', role);
     await prefs.setString('user_id', userId);
-    await prefs.setString('user_name', name); // Save user name
+    await prefs.setString('user_name', name);
     await prefs.setBool('is_logged_in', true);
+
+    // Retrieve and save FCM token
+    try {
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await FirebaseFirestore.instance.collection('users').doc(userId).set(
+          {'fcmToken': fcmToken},
+          SetOptions(merge: true), // Correct usage of SetOptions
+        );
+      }
+    } catch (e) {
+      print('Error saving FCM token: $e');
+    }
   }
 
   // Navigate to appropriate home screen based on role
@@ -113,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
       String actualRole = userData['role'] ?? '';
-      String userName = userData['name'] ?? 'User'; // Get user name
+      String userName = userData['name'] ?? 'User';
 
       // Check if selected role matches the user's actual role
       if (actualRole != selectedRole) {
@@ -125,12 +140,12 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // Save login info to SharedPreferences
+      // Save login info and FCM token
       await _saveUserLoginInfo(
         email.trim(),
         actualRole,
         userCredential.user!.uid,
-        userName, // Pass the user name
+        userName,
       );
 
       setState(() {
@@ -209,8 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           : (String? newValue) {
                             setState(() {
                               selectedRole = newValue!;
-                              errorMessage =
-                                  ''; // Clear error when role changes
+                              errorMessage = '';
                             });
                           },
                   decoration: InputDecoration(

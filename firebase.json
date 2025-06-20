@@ -1,2 +1,35 @@
-
-{"flutter":{"platforms":{"android":{"default":{"projectId":"findmybus-e73c3","appId":"1:562618271703:android:082380ed93063641e5ed92","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"findmybus-e73c3","configurations":{"android":"1:562618271703:android:082380ed93063641e5ed92","ios":"1:562618271703:ios:717b7a7087b31e83e5ed92"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "findmybus-e73c3",
+          "appId": "1:562618271703:android:082380ed93063641e5ed92",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "findmybus-e73c3",
+          "configurations": {
+            "android": "1:562618271703:android:082380ed93063641e5ed92",
+            "ios": "1:562618271703:ios:717b7a7087b31e83e5ed92"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
